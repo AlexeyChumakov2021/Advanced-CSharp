@@ -51,17 +51,19 @@ namespace Task_1
 
 				bool? stopSearching;
 
-				if (isDirectory)
-					stopSearching = DirectoryFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
-				else
-					stopSearching = FileFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
-
 				if (_filter is not null && _filter(fileInfo))
 				{
 					if (isDirectory)
-						FilteredDirectoryFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
+						stopSearching = FilteredDirectoryFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
 					else
-						FilteredFileFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
+						stopSearching = FilteredFileFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
+				}
+				else
+				{
+					if (isDirectory)
+						stopSearching = DirectoryFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
+					else
+						stopSearching = FileFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
 				}
 
 				if (stopSearching == true)
