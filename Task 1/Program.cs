@@ -8,23 +8,25 @@ namespace Task_1
 		{
 			string startDirectory = @"C:\Program Files";
 
-			FileSystemVisitor fileSystemVisitor = new FileSystemVisitor(startDirectory, file => file.Name is "IIS");
+			FileSystemInfosProvider provider = new FileSystemInfosProvider();
+
+			FileSystemVisitor fileSystemVisitor = new FileSystemVisitor(provider, startDirectory, file => file.Name is "IIS");
 
 			fileSystemVisitor.Start += (directory => Console.WriteLine($"Searching has been started in directory \"{directory}\"\n"));
-			fileSystemVisitor.Finish += (directory => Console.WriteLine($"\nSearching has been finished in directory \"{directory}\"")); ;
+			fileSystemVisitor.Finish += (directory => Console.WriteLine($"\nSearching has been finished in directory \"{directory}\""));
 
-			fileSystemVisitor.FileFinded += ((sender, e) =>
+			fileSystemVisitor.FileFinded += ((_, e) =>
 			{
-				if (e.Item.Name.Length > 14 && e.Item.Extension is ".txt")
+				if (e.Item.Name.Length > 14 || e.Item.Extension is ".txt")
 				{
 					e.Action = FileSystemInfoActionType.SkipItem;
 				}
 				else
 					Console.WriteLine($"\"{e.Item.Name}\" file was found");
 			});
-			fileSystemVisitor.DirectoryFinded += ((sender, e) =>
+			fileSystemVisitor.DirectoryFinded += ((_, e) =>
 			{
-				if (e.Item.Name.Length > 10)
+				if (e.Item.Name.Length > 14)
 				{
 					e.Action = FileSystemInfoActionType.SkipItem;
 				}
@@ -32,9 +34,9 @@ namespace Task_1
 					Console.WriteLine($"\"{e.Item.Name}\" directory was found");
 			});
 
-			fileSystemVisitor.FilteredFileFinded += ((sender, e) =>
+			fileSystemVisitor.FilteredFileFinded += ((_, e) =>
 			{
-				if (e.Item.Name.Length > 14 && e.Item.Extension is ".txt")
+				if (e.Item.Name.Length > 14 || e.Item.Extension is ".txt")
 				{
 					e.Action = FileSystemInfoActionType.SkipItem;
 				}
@@ -52,9 +54,9 @@ namespace Task_1
 					e.Action = FileSystemInfoActionType.StopSearch;
 				}
 			});
-			fileSystemVisitor.FilteredDirectoryFinded += ((sender, e) =>
+			fileSystemVisitor.FilteredDirectoryFinded += ((_, e) =>
 			{
-				if (e.Item.Name.Length > 10)
+				if (e.Item.Name.Length > 14)
 				{
 					e.Action = FileSystemInfoActionType.SkipItem;
 				}

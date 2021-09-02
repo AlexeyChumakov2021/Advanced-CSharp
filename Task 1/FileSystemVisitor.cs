@@ -2,23 +2,24 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using Task_1.Contracts;
 
 namespace Task_1
 {
 	public class FileSystemVisitor : IEnumerable<FileSystemInfo>
 	{
-		private readonly string _startDirectoryPath;
-
+		private readonly IFileSystemInfosProvider _provider;
+		private readonly string _directoryPath;
 		private readonly Func<FileSystemInfo, bool> _filter;
 
-		public FileSystemVisitor(string startDirectoryPath) : this(startDirectoryPath, null)
+		public FileSystemVisitor(IFileSystemInfosProvider provider, string directoryPath) : this(provider, directoryPath, null)
 		{
 		}
 
-		public FileSystemVisitor(string startDirectoryPath, Func<FileSystemInfo, bool> filter)
+		public FileSystemVisitor(IFileSystemInfosProvider provider, string directoryPath, Func<FileSystemInfo, bool> filter)
 		{
-			_startDirectoryPath = startDirectoryPath;
-
+			_provider = provider;
+			_directoryPath = directoryPath;
 			_filter = filter;
 		}
 
@@ -42,10 +43,9 @@ namespace Task_1
 
 		public IEnumerator<FileSystemInfo> GetEnumerator()
 		{
-			Start?.Invoke(_startDirectoryPath);
+			Start?.Invoke(_directoryPath);
 
-			DirectoryInfo directory = new DirectoryInfo(_startDirectoryPath);
-			IEnumerable<FileSystemInfo> fileInfos = directory.GetFileSystemInfos();
+			IEnumerable<FileSystemInfo> fileInfos = _provider.GetFileSystemInfos(_directoryPath);
 
 			foreach (FileSystemInfo fileInfo in fileInfos)
 			{
@@ -72,20 +72,20 @@ namespace Task_1
 						FileFinded?.Invoke(this, e);
 				}
 
+				if (e.Action is FileSystemInfoActionType.SkipItem)
+					continue;
+
+				yield return fileInfo;
+
 				if (e.Action is FileSystemInfoActionType.StopSearch)
 				{
-					Finish?.Invoke(_startDirectoryPath);
+					Finish?.Invoke(_directoryPath);
+
 					yield break;
-				}
-				else
-				{
-					if(e.Action is FileSystemInfoActionType.SkipItem)
-						continue;
-					yield return fileInfo;
 				}
 			}
 
-			Finish?.Invoke(_startDirectoryPath);
+			Finish?.Invoke(_directoryPath);
 		}
 
 		IEnumerator IEnumerable.GetEnumerator()
