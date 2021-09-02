@@ -1,0 +1,8 @@
+﻿################################################################################
+# Данный GITIGNORE-файл был автоматически создан Microsoft(R) Visual Studio.
+################################################################################
+
+/Task 1/obj/Debug/net5.0/Task 1.AssemblyInfo.cs
+/Task 1/obj/Debug/net5.0/Task 1.AssemblyInfoInputs.cache
+/Task 1/obj/Debug/net5.0/.NETCoreApp,Version=v5.0.AssemblyAttributes.cs
+/Task 1/obj/Debug/net5.0/Task 1.GeneratedMSBuildEditorConfig.editorconfig
