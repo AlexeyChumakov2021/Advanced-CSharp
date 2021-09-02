@@ -8,110 +8,72 @@ namespace Task_1
 		{
 			string startDirectory = @"C:\Program Files";
 
-			FileSystemVisitor fileSystemVisitor = new FileSystemVisitor(startDirectory, file => file.Name == "IIS", FileSystemFlag.TxtFile, FileSystemFlag.LongNameDirectory | FileSystemFlag.LongNameFile);
+			FileSystemVisitor fileSystemVisitor = new FileSystemVisitor(startDirectory, file => file.Name is "IIS");
 
 			fileSystemVisitor.Start += (directory => Console.WriteLine($"Searching has been started in directory \"{directory}\"\n"));
 			fileSystemVisitor.Finish += (directory => Console.WriteLine($"\nSearching has been finished in directory \"{directory}\"")); ;
 
-			fileSystemVisitor.FileFinded += ((file, stopFlag, ignoreFlag) =>
+			fileSystemVisitor.FileFinded += ((sender, e) =>
 			{
-				if (!(ignoreFlag.HasFlag(FileSystemFlag.File)
-					 || (ignoreFlag.HasFlag(FileSystemFlag.LongNameFile) && file.Name.Length > 14)
-					 || (ignoreFlag.HasFlag(FileSystemFlag.TxtFile) && file.Extension == ".txt")))
+				if (e.Item.Name.Length > 14 && e.Item.Extension is ".txt")
 				{
-					Console.WriteLine($"\"{file.Name}\" file was found");
-				}
-
-				if (stopFlag.HasFlag(FileSystemFlag.File)
-					  || (stopFlag.HasFlag(FileSystemFlag.LongNameFile) && file.Name.Length > 14)
-					  || (stopFlag.HasFlag(FileSystemFlag.TxtFile) && file.Extension == ".txt"))
-				{
-					Console.WriteLine("Stop searching!");
-					return true;
+					e.Action = FileSystemInfoActionType.SkipItem;
 				}
 				else
-				{
-					return false;
-				}
+					Console.WriteLine($"\"{e.Item.Name}\" file was found");
 			});
-			fileSystemVisitor.DirectoryFinded += ((directory, stopFlag, ignoreFlag) =>
+			fileSystemVisitor.DirectoryFinded += ((sender, e) =>
 			{
-				if (!(ignoreFlag.HasFlag(FileSystemFlag.Directory)
-					  || (ignoreFlag.HasFlag(FileSystemFlag.LongNameDirectory) && directory.Name.Length > 10)))
+				if (e.Item.Name.Length > 10)
 				{
-					Console.WriteLine($"\"{directory.Name}\" directory was found");
-				}
-
-				if (stopFlag.HasFlag(FileSystemFlag.Directory)
-					  || (stopFlag.HasFlag(FileSystemFlag.LongNameDirectory) && directory.Name.Length > 10))
-				{
-					Console.WriteLine("Stop searching!");
-					return true;
+					e.Action = FileSystemInfoActionType.SkipItem;
 				}
 				else
-				{
-					return false;
-				}
+					Console.WriteLine($"\"{e.Item.Name}\" directory was found");
 			});
 
-			fileSystemVisitor.FilteredFileFinded += ((file, stopFlag, ignoreFlag) =>
+			fileSystemVisitor.FilteredFileFinded += ((sender, e) =>
 			{
-				if (!(ignoreFlag.HasFlag(FileSystemFlag.File)
-					  || (ignoreFlag.HasFlag(FileSystemFlag.LongNameFile) && file.Name.Length > 14)
-					  || (ignoreFlag.HasFlag(FileSystemFlag.TxtFile) && file.Extension == ".txt")))
+				if (e.Item.Name.Length > 14 && e.Item.Extension is ".txt")
+				{
+					e.Action = FileSystemInfoActionType.SkipItem;
+				}
+				else
 				{
 					Console.BackgroundColor = ConsoleColor.Green;
 					Console.ForegroundColor = ConsoleColor.Black;
 
 					Console.WriteLine(
-						$"\"{file.Name}\" file was found and matched by filter");
+						$"\"{e.Item.Name}\" file was found and matched by filter");
 
 					Console.BackgroundColor = ConsoleColor.Black;
 					Console.ForegroundColor = ConsoleColor.White;
-				}
 
-				if (stopFlag.HasFlag(FileSystemFlag.File)
-					  || (stopFlag.HasFlag(FileSystemFlag.LongNameFile) && file.Name.Length > 14)
-					  || (stopFlag.HasFlag(FileSystemFlag.TxtFile) && file.Extension == ".txt"))
-				{
-					Console.WriteLine("Stop searching!");
-					return true;
-				}
-				else
-				{
-					return false;
+					e.Action = FileSystemInfoActionType.StopSearch;
 				}
 			});
-			fileSystemVisitor.FilteredDirectoryFinded += ((directory, stopFlag, ignoreFlag) =>
+			fileSystemVisitor.FilteredDirectoryFinded += ((sender, e) =>
 			{
-				if (!(ignoreFlag.HasFlag(FileSystemFlag.Directory)
-					  || (ignoreFlag.HasFlag(FileSystemFlag.LongNameDirectory) && directory.Name.Length > 10)))
+				if (e.Item.Name.Length > 10)
+				{
+					e.Action = FileSystemInfoActionType.SkipItem;
+				}
+				else
 				{
 					Console.BackgroundColor = ConsoleColor.Green;
 					Console.ForegroundColor = ConsoleColor.Black;
 
 					Console.WriteLine(
-						$"\"{directory.Name}\" directory was found and matched by filter");
+						$"\"{e.Item.Name}\" directory was found and matched by filter");
 
 					Console.BackgroundColor = ConsoleColor.Black;
 					Console.ForegroundColor = ConsoleColor.White;
-				}
 
-				if (stopFlag.HasFlag(FileSystemFlag.Directory)
-					  || (stopFlag.HasFlag(FileSystemFlag.LongNameDirectory) && directory.Name.Length > 10))
-				{
-					Console.WriteLine("Stop searching!");
-					return true;
-				}
-				else
-				{
-					return false;
+					e.Action = FileSystemInfoActionType.StopSearch;
 				}
 			});
 
-			foreach (var file in fileSystemVisitor)
-			{
-			}
+			fileSystemVisitor.Visit();
 		}
 	}
 }

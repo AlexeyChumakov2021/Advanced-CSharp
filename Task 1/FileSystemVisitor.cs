@@ -11,65 +11,78 @@ namespace Task_1
 
 		private readonly Func<FileSystemInfo, bool> _filter;
 
-		private readonly FileSystemFlag _stopFlag;
-		private readonly FileSystemFlag _ignoreFlag;
-
-		public FileSystemVisitor(string startDirectoryPath, FileSystemFlag stopFlag, FileSystemFlag ignoreFlag) : this(startDirectoryPath, null, stopFlag, ignoreFlag)
+		public FileSystemVisitor(string startDirectoryPath) : this(startDirectoryPath, null)
 		{
 		}
 
-		public FileSystemVisitor(string startDirectoryPath, Func<FileSystemInfo, bool> filter, FileSystemFlag stopFlag, FileSystemFlag ignoreFlag)
+		public FileSystemVisitor(string startDirectoryPath, Func<FileSystemInfo, bool> filter)
 		{
 			_startDirectoryPath = startDirectoryPath;
 
 			_filter = filter;
-
-			_stopFlag = stopFlag;
-			_ignoreFlag = ignoreFlag;
 		}
 
 		public event Action<string> Start;
 		public event Action<string> Finish;
 
-		public event Func<FileSystemInfo, FileSystemFlag, FileSystemFlag, bool> FileFinded;
-		public event Func<FileSystemInfo, FileSystemFlag, FileSystemFlag, bool> DirectoryFinded;
+		public event EventHandler<FileSystemInfoEventArgs> FileFinded;
+		public event EventHandler<FileSystemInfoEventArgs> DirectoryFinded;
 
-		public event Func<FileSystemInfo, FileSystemFlag, FileSystemFlag, bool> FilteredFileFinded;
-		public event Func<FileSystemInfo, FileSystemFlag, FileSystemFlag, bool> FilteredDirectoryFinded;
+		public event EventHandler<FileSystemInfoEventArgs> FilteredFileFinded;
+		public event EventHandler<FileSystemInfoEventArgs> FilteredDirectoryFinded;
+
+		public IEnumerable<FileSystemInfo> Visit()
+		{
+			foreach (var _ in this)
+			{
+			}
+
+			return this;
+		}
 
 		public IEnumerator<FileSystemInfo> GetEnumerator()
 		{
 			Start?.Invoke(_startDirectoryPath);
 
 			DirectoryInfo directory = new DirectoryInfo(_startDirectoryPath);
-
 			IEnumerable<FileSystemInfo> fileInfos = directory.GetFileSystemInfos();
 
 			foreach (FileSystemInfo fileInfo in fileInfos)
 			{
-				bool isDirectory = fileInfo.Attributes.HasFlag(FileAttributes.Directory);
+				FileSystemInfoEventArgs e = new FileSystemInfoEventArgs
+				{
+					Item = fileInfo,
+					Action = FileSystemInfoActionType.None
+				};
 
-				bool? stopSearching;
+				bool isDirectory = fileInfo.Attributes.HasFlag(FileAttributes.Directory);
 
 				if (_filter is not null && _filter(fileInfo))
 				{
 					if (isDirectory)
-						stopSearching = FilteredDirectoryFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
+						FilteredDirectoryFinded?.Invoke(this, e);
 					else
-						stopSearching = FilteredFileFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
+						FilteredFileFinded?.Invoke(this, e);
 				}
 				else
 				{
 					if (isDirectory)
-						stopSearching = DirectoryFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
+						DirectoryFinded?.Invoke(this, e);
 					else
-						stopSearching = FileFinded?.Invoke(fileInfo, _stopFlag, _ignoreFlag);
+						FileFinded?.Invoke(this, e);
 				}
 
-				if (stopSearching == true)
+				if (e.Action is FileSystemInfoActionType.StopSearch)
+				{
+					Finish?.Invoke(_startDirectoryPath);
 					yield break;
+				}
 				else
+				{
+					if(e.Action is FileSystemInfoActionType.SkipItem)
+						continue;
 					yield return fileInfo;
+				}
 			}
 
 			Finish?.Invoke(_startDirectoryPath);
